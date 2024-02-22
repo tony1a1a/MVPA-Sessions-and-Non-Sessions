@@ -1,0 +1,134 @@
+## read all cvs files of the 100k participants into a data_list
+
+folder_path <- "your foler where the data are stored"
+file_names <- list.files(path = folder_path, pattern = "\\.csv$")
+table_list <- lapply(file_names, function(x) read_csv(paste0(folder_path, "/", x)))
+data_list <- lapply(table_list, as.data.frame)
+
+## define the sliding winow function 
+
+  sliding_window <- function(x) {
+  overall_mean <- mean(x, na.rm = TRUE)
+  window_size <- 359                                       
+  labels <- rep(0, length(x))
+  for (i in 1:length(x)) {
+    if (i + window_size > length(x)) {
+      break
+    }
+    window <- x[i:(i+window_size-1)]
+    window_mean <- max(mean(window, na.rm = TRUE), 0, na.rm = TRUE)
+    if (window_mean >= 125) {                 
+      window_size <- window_size + 1
+      if (window_size >= 360 & window_mean >= 125) {                   ## essential code: 360 is 30 minutes; 125 is the cut-point
+        labels[i:(i+window_size-1)] <- 1
+      }
+    } else {
+      if (window_size > 359) {                             
+        window_size <- window_size - 1
+      }
+    }
+  }
+  return(labels)
+}
+
+## Apply the function to all participants. 
+
+apply_sliding_window <- function(df) {
+  df$label <- sliding_window(df$accele)
+  return(df)
+}
+
+data_list <- lapply(data_list, apply_sliding_window)
+
+## convert acceleration to energy expenditure based on https://www.nature.com/articles/s41591-020-1012-3
+
+data_list <- lapply(data_list, function(df) {
+  df$EE <- NA                                   
+  df$EE [df$accele >= 0 & df$accele < 3] = 0
+  df$EE [df$accele >= 3 & df$accele < 4] = 0.04
+  df$EE [df$accele >= 4 & df$accele < 5] = 0.13
+  df$EE [df$accele >= 5 & df$accele < 6] = 0.22
+  df$EE [df$accele >= 6 & df$accele < 7] = 0.30 
+  df$EE [df$accele >= 7 & df$accele < 8] = 0.39
+  df$EE [df$accele >= 8 & df$accele < 9] = 0.47
+  df$EE [df$accele >= 9 & df$accele < 10] = 0.55
+  df$EE [df$accele >= 10 & df$accele < 11] = 0.63
+  df$EE [df$accele >= 11 & df$accele < 12] = 0.71
+  df$EE [df$accele >= 12 & df$accele < 13] = 0.79
+  df$EE [df$accele >= 13 & df$accele < 14] = 0.87
+  df$EE [df$accele >= 14 & df$accele < 15] = 0.94
+  df$EE [df$accele >= 15 & df$accele < 16] = 1.02
+  df$EE [df$accele >= 16 & df$accele < 17] = 1.10
+  df$EE [df$accele >= 17 & df$accele < 18] = 1.17
+  df$EE [df$accele >= 18 & df$accele < 19] = 1.24
+  df$EE [df$accele >= 19 & df$accele < 20] = 1.32
+  df$EE [df$accele >= 20 & df$accele < 25] = 1.54
+  df$EE [df$accele >= 25 & df$accele < 30] = 1.90
+  df$EE [df$accele >= 30 & df$accele < 35] = 2.25
+  df$EE [df$accele >= 35 & df$accele < 40] = 2.59
+  df$EE [df$accele >= 40 & df$accele < 45] = 2.93
+  df$EE [df$accele >= 45 & df$accele < 50] = 3.26
+  df$EE [df$accele >= 50 & df$accele < 55] = 3.59
+  df$EE [df$accele >= 55 & df$accele < 60] = 3.91
+  df$EE [df$accele >= 60 & df$accele < 65] = 4.23
+  df$EE [df$accele >= 65 & df$accele < 70] = 4.55
+  df$EE [df$accele >= 70 & df$accele < 75] = 4.87
+  df$EE [df$accele >= 75 & df$accele < 80] = 5.18
+  df$EE [df$accele >= 80 & df$accele < 85] = 5.49
+  df$EE [df$accele >= 85 & df$accele < 90] = 5.80
+  df$EE [df$accele >= 90 & df$accele < 95] = 6.10
+  df$EE [df$accele >= 95 & df$accele < 100] = 6.40
+  df$EE [df$accele >= 100 & df$accele < 125] = 7.30
+  df$EE [df$accele >= 125 & df$accele < 150] = 8.74
+  df$EE [df$accele >= 150 & df$accele < 175] = 10.14
+  df$EE [df$accele >= 175 & df$accele < 200] = 11.49
+  df$EE [df$accele >= 200 & df$accele < 225] = 12.80
+  df$EE [df$accele >= 225 & df$accele < 250] = 14.07
+  df$EE [df$accele >= 250 & df$accele < 275] = 15.30
+  df$EE [df$accele >= 275 & df$accele < 300] = 16.50
+  df$EE [df$accele >= 300 & df$accele < 325] = 17.65
+  df$EE [df$accele >= 325 & df$accele < 350] = 18.77
+  df$EE [df$accele >= 350 & df$accele < 375] = 19.85
+  df$EE [df$accele >= 375 & df$accele < 400] = 20.90
+  df$EE [df$accele >= 400 & df$accele < 425] = 21.91
+  df$EE [df$accele >= 425 & df$accele < 450] = 22.89
+  df$EE [df$accele >= 450 & df$accele < 475] = 23.83
+  df$EE [df$accele >= 475 & df$accele < 500] = 24.74
+  df$EE [df$accele >= 500 & df$accele < 600] = 26.85
+  df$EE [df$accele >= 600 & df$accele < 700] = 29.79
+  df$EE [df$accele >= 700 & df$accele < 800] = 32.19
+  df$EE [df$accele >= 800 & df$accele < 900] = 34.05
+  df$EE [df$accele >= 900 & df$accele < 1000] = 35.38
+  df$EE [df$accele >= 1000 & df$accele < 1100] = 36.18
+  df$EE [df$accele >= 1100 ] = 36.45
+  return(df)
+})
+
+
+file_names <- substr(file_names ,1,nchar(file_names)-14)
+names(data_list) <- file_names
+
+results <- lapply(data_list, function(df) {
+ df <- df[complete.cases(df), ] 
+    length_labeled <- length(df[[1]][df[[3]]==1])
+    length_unlabeled <- length(df[[1]][df[[3]]==0])
+    length_labeled_MVPA   <- length(df[[1]][df[[3]]==1 & df[[1]]>=125])
+    length_unlabeled_MVPA   <- length(df[[1]][df[[3]]==0 & df[[1]]>=125])
+    PAEE <- sum(df[[4]])/12/60/7                                              ## units are KJ/kg/day         
+    PAEE_session <- sum(df[[4]][df[[3]]==1])/12/60/7
+    PAEE_non_session <- sum(df[[4]][df[[3]]==0])/12/60/7
+    PAEE_session_MVPA <- sum(df[[4]][df[[3]]==1 & df[[1]]>=125])/12/60/7
+    PAEE_non_session_MVPA <- sum(df[[4]][df[[3]]==0 & df[[1]]>=125])/12/60/7
+    PAEE_MVPA <- PAEE_session_MVPA +  PAEE_non_session_MVPA
+
+    return(list(length_labeled = length_labeled, length_unlabeled=length_unlabeled, length_labeled_MVPA = length_labeled_MVPA,length_unlabeled_MVPA=length_unlabeled_MVPA,PAEE=PAEE,PAEE_session=PAEE_session,PAEE_non_session=PAEE_non_session, PAEE_session_MVPA=PAEE_session_MVPA,PAEE_non_session_MVPA=PAEE_non_session_MVPA, PAEE_MVPA=PAEE_MVPA))
+})
+
+PAEE_file <- as.data.frame(do.call(rbind, results))
+PAEE_file <- data.frame(eid = rownames(PAEE_file), PAEE_file)
+PAEE_file <- data.frame(lapply(PAEE_file, function(x) as.numeric(as.character(x))))
+
+## the PAEE file contains PAEE, PAEE-S, PAEE-nonS, and PAEE-MVPA for each participant
+## merge PAEE file with the main dataset
+
+biobank <- merge(biobank_main, PAEE_file, by="eid", all.x=TRUE)
